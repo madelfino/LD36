@@ -24,6 +24,8 @@
             1,  5, 1, 11
         ];
 
+        var map, layer1, marker;
+
         function preload () {
 
             game.load.image('smashflow_tileset', 'assets/img/smashflow_tileset.png');
@@ -35,6 +37,11 @@
             map = game.add.tilemap();
             map.addTilesetImage('smashflow_tileset');
 
+            createTileSelector();
+
+            game.input.addMoveCallback(updateMarker, this);
+            game.input.onDown.add(tileClick, this);
+
             layer1 = map.create('level1', 4, 4, 32, 32);
             for (var i=0; i<4; ++i) {
                 for (var j=0; j<4; ++j) {
@@ -43,12 +50,35 @@
                         map.putTile(currentTile - 1, i, j);
                     }
                 }
-            }
-            
+            }  
         }
 
-        function render() {
+        function updateMarker() {
 
+            marker.x = layer1.getTileX(game.input.activePointer.worldX) * 32;
+            marker.y = layer1.getTileY(game.input.activePointer.worldY) * 32;
+        }
+
+        function tileClick() {
+
+            tileX = layer1.getTileX(marker.x);
+            tileY = layer1.getTileX(marker.y);
+            tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            tile_index = tiles[tileY * 4 + tileX].index;
+            console.log(tile_index);
+            console.log(tiles);
+            if (tile_index != -1) {
+                map.putTile((tile_index + 12) % 48,
+                            tileX,
+                            tileY);
+            }
+        }
+
+        function createTileSelector() {
+
+            marker = game.add.graphics();
+            marker.lineStyle(2, 0x000000, 1);
+            marker.drawRect(0, 0, 32, 32);
         }
 
     };
