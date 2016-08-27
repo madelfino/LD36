@@ -18,11 +18,14 @@
         var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create });
 
         var level1 = [
-            12, 1, 5, 1,
-            3,  0, 1, 5,
-            3,  1, 5, 7,
+            12, 5, 5, 1,
+            3,  5, 1, 5,
+            3,  1, 5, 5,
             1,  5, 1, 11
         ];
+
+        var source = 0;
+        var sink = 15;
 
         var map, layer1, marker;
 
@@ -45,12 +48,107 @@
             layer1 = map.create('level1', 4, 4, 32, 32);
             for (var i=0; i<4; ++i) {
                 for (var j=0; j<4; ++j) {
-                    currentTile = level1[i*4 + j];
+                    currentTile = level1[j*4 + i];
                     if (currentTile != 0) {
                         map.putTile(currentTile - 1, i, j);
                     }
                 }
-            }  
+            }
+            fillTiles(); 
+        }
+
+        function getEdges(tile_index) {
+
+            /*
+                Each number in this array represnts the binary
+                number that corresponds to which edges of a
+                tile has an inlet/outlet starting with the North
+                edge and going clockwise around. Example:
+                For the straight pipe that goes up and down there
+                are in/outlets on the North and South edges so it
+                is represented by 1010 in binary which is 10 in
+                decimal.
+            */
+            tileEdges = [
+                12, 12, 13, 13, 10, 10, 15, 15, 15, 15, 2, 2,
+                 6,  6, 14, 14,  5,  5, 15, 15, 15, 15, 1, 1,
+                 3,  3,  7,  7, 10, 10, 15, 15, 15, 15, 8, 8,
+                 9,  9, 11, 11,  5,  5, 15, 15, 15, 15, 4, 4
+            ];
+            edges = [ 0, 0, 0, 0];
+            whichEdges = tileEdges[tile_index];
+            for (var i = 0; i < 4; ++i) {
+                if (whichEdges % 2 == 1) ++edges[3 - i];
+                whichEdges = Math.floor(whichEdges / 2);
+            }
+            //console.log( 'getEdges(' + tile_index + ') = ' + edges );
+            return edges;
+        }
+
+        function floodFillTiles(tiles, from, edges, visited) {
+
+            tiles_to_check = [];
+            if (edges[0] == 1) {
+                if (getEdges(tiles[from-6])[2] == 1)
+                    tiles_to_check.push(from - 6);
+            }
+            if (edges[1] == 1) {
+                if (getEdges(tiles[from+1])[3] == 1)
+                    tiles_to_check.push(from + 1);
+            }
+            if (edges[2] == 1) {
+                if (getEdges(tiles[from+6])[0] == 1)
+                    tiles_to_check.push(from + 6);
+            }
+            if (edges[3] == 1) {
+                if (getEdges(tiles[from-1])[1] == 1)
+                    tiles_to_check.push(from - 1);
+            }
+                
+            for(var i=0; i<tiles_to_check.length; ++i) {
+                var tile_to_check = tiles_to_check[i];
+                var tile_index = tiles[tile_to_check];
+                if (tile_index != -1 && visited.indexOf(tile_to_check) == -1) {
+                    var new_edges = getEdges(tile_index);
+                    if (tile_index % 2 == 0) {
+                        console.log('filling up ' + tile_to_check);
+                        // make sure the tile is displaying as filled
+                        var orig_tile = tile_to_check;
+                        if (orig_tile >= 13) orig_tile -= 2;
+                        if (orig_tile >= 17) orig_tile -= 2;
+                        if (orig_tile >= 21) orig_tile -= 2;
+                        orig_tile -= 7;
+                        map.putTile( tile_index + 1, orig_tile % 4, Math.floor(orig_tile / 4) );
+                    }
+                    visited.push(tile_to_check);
+                    floodFillTiles(tiles, tile_to_check, new_edges, visited);
+                }
+            }
+            
+        }
+
+        function fillTiles() {
+
+            tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            var start_tile_index = tiles[source].index;
+            var start_tile;
+            padded_tiles = [
+                -1, -1, -1, -1, -1, -1,
+                -1,  0,  0,  0,  0, -1,
+                -1,  0,  0,  0,  0, -1,
+                -1,  0,  0,  0,  0, -1,
+                -1,  0,  0,  0,  0, -1,
+                -1, -1, -1, -1, -1, -1
+            ];
+            for (var i=0; i<16; ++i) {
+                var padded_index = 7 + i;
+                if (i >= 4) padded_index += 2;
+                if (i >= 8) padded_index += 2;
+                if (i >= 12) padded_index += 2;
+                padded_tiles[padded_index] = tiles[i].index
+                if (i == source) start_tile = padded_index;
+            }
+            floodFillTiles(padded_tiles, start_tile, getEdges(start_tile_index), [ start_tile ]);
         }
 
         function updateMarker() {
@@ -61,17 +159,22 @@
 
         function tileClick() {
 
+            if (marker.x > 32 * 4 || marker.y > 32 * 4) return;
+            tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            for (var i=0; i<tiles.length; ++i) {
+                if (tiles[i].index % 2 == 1 && i != source) {
+                    map.putTile(tiles[i].index - 1, i % 4, Math.floor(i/4));
+                }
+            }
             tileX = layer1.getTileX(marker.x);
             tileY = layer1.getTileX(marker.y);
-            tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
             tile_index = tiles[tileY * 4 + tileX].index;
-            console.log(tile_index);
-            console.log(tiles);
             if (tile_index != -1) {
                 map.putTile((tile_index + 12) % 48,
                             tileX,
                             tileY);
             }
+            fillTiles();
         }
 
         function createTileSelector() {
