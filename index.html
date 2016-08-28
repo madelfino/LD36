@@ -18,14 +18,22 @@
         var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create });
 
         var level1 = [
+             1,  5,  1, 24,
+            23,  5,  5,  5,
+             3,  0, 13, 13,
+             3,  1,  1, 13
+        ];
+
+        var level2 = [
             12, 5, 5, 1,
             3,  5, 1, 5,
             3,  1, 5, 5,
             1,  5, 1, 11
         ];
 
-        var source = 0;
-        var sink = 15;
+        var source = 3;
+        var sink = 4;
+        var hole = 9;
 
         var map, layer1, marker;
 
@@ -44,6 +52,7 @@
 
             game.input.addMoveCallback(updateMarker, this);
             game.input.onDown.add(tileClick, this);
+            cursors = game.input.keyboard.createCursorKeys();
 
             layer1 = map.create('level1', 4, 4, 32, 32);
             for (var i=0; i<4; ++i) {
@@ -54,7 +63,64 @@
                     }
                 }
             }
-            fillTiles(); 
+            fillTiles();
+            game.input.keyboard.onDownCallback = update; 
+        }
+
+        function update() {
+
+            if (cursors.left.downDuration(100) && hole % 4 != 3) {
+                tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+                for (var i=0; i<tiles.length; ++i) {
+                    if (Math.floor(i/4) == Math.floor(hole/4) && i > hole) {
+                        if (source == i || sink == i) break;
+                        map.putTile(tiles[i].index, hole % 4, Math.floor(hole/4));
+                        map.removeTile(i%4, Math.floor(i/4));
+                        hole = i;
+                        fillTiles();
+                        break;
+                    }
+                }
+            }
+            if (cursors.right.downDuration(100) && hole % 4 != 0) {
+                tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+                for (var i=tiles.length-1; i>=0; --i) {
+                    if (Math.floor(i/4) == Math.floor(hole/4) && i < hole) {
+                        if (source == i || sink == i) break;
+                        map.putTile(tiles[i].index, hole % 4, Math.floor(hole/4));
+                        map.removeTile(i%4, Math.floor(i/4));
+                        hole = i;
+                        fillTiles();
+                        break;
+                    }
+                }
+            }
+            if (cursors.up.downDuration(100) && Math.floor(hole/4) != 3) {
+                tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+                for (var i=0; i<tiles.length; ++i) {
+                    if (i%4 == hole%4 && i > hole) {
+                        if (source == i || sink == i) break;
+                        map.putTile(tiles[i].index, hole % 4, Math.floor(hole/4));
+                        map.removeTile(i%4, Math.floor(i/4));
+                        hole = i;
+                        fillTiles();
+                        break;
+                    }
+                }
+            }
+            if (cursors.down.downDuration(100) && Math.floor(hole/4) != 0) {
+                tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+                for (var i=tiles.length-1; i>=0; --i) {
+                    if (i%4 == hole%4 && i < hole) {
+                        if (source == i || sink == i) break;
+                        map.putTile(tiles[i].index, hole % 4, Math.floor(hole/4));
+                        map.removeTile(i%4, Math.floor(i/4));
+                        hole = i;
+                        fillTiles();
+                        break;
+                    }
+                }
+            }
         }
 
         function getEdges(tile_index) {
@@ -111,7 +177,6 @@
                 if (tile_index != -1 && visited.indexOf(tile_to_check) == -1) {
                     var new_edges = getEdges(tile_index);
                     if (tile_index % 2 == 0) {
-                        console.log('filling up ' + tile_to_check);
                         // make sure the tile is displaying as filled
                         var orig_tile = tile_to_check;
                         if (orig_tile >= 13) orig_tile -= 2;
@@ -121,7 +186,8 @@
                         map.putTile( tile_index + 1, orig_tile % 4, Math.floor(orig_tile / 4) );
                     }
                     visited.push(tile_to_check);
-                    floodFillTiles(tiles, tile_to_check, new_edges, visited);
+                    //floodFillTiles(tiles, tile_to_check, new_edges, visited);
+                    game.time.events.add(Phaser.Timer.SECOND / 10, floodFillTiles, this, tiles, tile_to_check, new_edges, visited);
                 }
             }
             
@@ -130,6 +196,13 @@
         function fillTiles() {
 
             tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            for (var i=0; i<tiles.length; ++i) {
+                if (tiles[i].index % 2 == 1 && i != source) {
+                    map.putTile(tiles[i].index - 1, i % 4, Math.floor(i/4));
+                } else if (i == source && tiles[i].index % 2 == 0) {
+                    map.putTile(tiles[i].index + 1, i % 4, Math.floor(i/4));
+                }
+            }
             var start_tile_index = tiles[source].index;
             var start_tile;
             padded_tiles = [
@@ -160,12 +233,6 @@
         function tileClick() {
 
             if (marker.x > 32 * 4 || marker.y > 32 * 4) return;
-            tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
-            for (var i=0; i<tiles.length; ++i) {
-                if (tiles[i].index % 2 == 1 && i != source) {
-                    map.putTile(tiles[i].index - 1, i % 4, Math.floor(i/4));
-                }
-            }
             tileX = layer1.getTileX(marker.x);
             tileY = layer1.getTileX(marker.y);
             tile_index = tiles[tileY * 4 + tileX].index;
