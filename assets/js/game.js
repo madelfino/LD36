@@ -6,11 +6,11 @@ window.onload = function() {
     var game = new Phaser.Game( 800, 600, Phaser.AUTO, '', { preload: preload, create: create });
 
     var level1 = [
-        24,  1,  5, 37, 17, 13,
-        39,  1,  5,  5, 13, 13,
-        17, 37,  0, 37,  5, 15,
+        24,  7,  5, 37, 17, 13,
+        39,  1,  5,  5,  7, 13,
+        17,  7,  0,  7,  5, 15,
          1, 13, 37,  5,  5, 39,
-         3,  5, 17,  5, 39, 47
+         3,  5, 17,  7, 39, 47
     ];
 
     var level2 = [
@@ -25,6 +25,14 @@ window.onload = function() {
         3,  5, 1, 5,
         3,  1, 5, 5,
         1,  5, 1, 11
+    ];
+
+    var level4 = [
+        24,  1,  5, 37, 17, 13,
+        39,  1,  5,  5, 13, 13,
+        17, 37,  0, 37,  5, 15,
+         1, 13, 37,  5,  5, 39,
+         3,  5, 17,  5, 39, 47
     ];
 
     var source = 0;
@@ -59,7 +67,7 @@ window.onload = function() {
         }
         layer1.resizeWorld();
         fillTiles();
-        game.input.keyboard.onDownCallback = update; 
+        game.input.keyboard.onDownCallback = update;
 
         createTileSelector();
     }
@@ -171,7 +179,7 @@ window.onload = function() {
             if (getEdges(tiles[from-1])[1] == 1)
                 tiles_to_check.push(from - 1);
         }
-            
+
         for(var i=0; i<tiles_to_check.length; ++i) {
             var tile_to_check = tiles_to_check[i];
             var tile_index = tiles[tile_to_check];
@@ -193,7 +201,7 @@ window.onload = function() {
                 game.time.events.add(Phaser.Timer.SECOND / 10, floodFillTiles, this, tiles, tile_to_check, new_edges, visited);
             }
         }
-        
+
     }
 
     function fillTiles() {
