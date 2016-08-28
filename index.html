@@ -11,29 +11,36 @@
 
     window.onload = function() {
 
-        //  Note that this html file is set to pull down Phaser 2.5.0 from the JS Delivr CDN.
-        //  Although it will work fine with this tutorial, it's almost certainly not the most current version.
-        //  Be sure to replace it with an updated version before you start experimenting with adding your own code.
+        var ROWS = 5, COLS = 6;
+        var TILE_SIZE = 32; //Just support square tiles for now
 
-        var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create });
+        var game = new Phaser.Game( 800, 600, Phaser.AUTO, '', { preload: preload, create: create });
 
         var level1 = [
+            24,  1,  5, 37, 17, 13,
+            39,  1,  5,  5, 13, 13,
+            17, 37,  0, 37,  5, 15,
+             1, 13, 37,  5,  5, 39,
+             3,  5, 17,  5, 39, 47
+        ];
+
+        var level2 = [
              1,  5,  1, 24,
             23,  5,  5,  5,
              3,  0, 13, 13,
              3,  1,  1, 13
         ];
 
-        var level2 = [
+        var level3 = [
             12, 5, 5, 1,
             3,  5, 1, 5,
             3,  1, 5, 5,
             1,  5, 1, 11
         ];
 
-        var source = 3;
-        var sink = 4;
-        var hole = 9;
+        var source = 0;
+        var sink = 29;
+        var hole = 14;
 
         var map, layer1, marker;
 
@@ -48,74 +55,79 @@
             map = game.add.tilemap();
             map.addTilesetImage('smashflow_tileset');
 
-            createTileSelector();
-
             game.input.addMoveCallback(updateMarker, this);
             game.input.onDown.add(tileClick, this);
             cursors = game.input.keyboard.createCursorKeys();
 
-            layer1 = map.create('level1', 4, 4, 32, 32);
-            for (var i=0; i<4; ++i) {
-                for (var j=0; j<4; ++j) {
-                    currentTile = level1[j*4 + i];
+            layer1 = map.create('level1', COLS, ROWS, TILE_SIZE, TILE_SIZE);
+            for (var i=0; i<COLS; ++i) {
+                for (var j=0; j<ROWS; ++j) {
+                    currentTile = level1[j*COLS + i];
                     if (currentTile != 0) {
                         map.putTile(currentTile - 1, i, j);
                     }
                 }
             }
+            layer1.resizeWorld();
             fillTiles();
             game.input.keyboard.onDownCallback = update; 
+
+            createTileSelector();
         }
 
         function update() {
 
-            if (cursors.left.downDuration(100) && hole % 4 != 3) {
-                tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            if (cursors.left.downDuration(100) && hole % COLS != COLS - 1) {
+                tiles = layer1.getTiles(0, 0, TILE_SIZE * COLS, TILE_SIZE * ROWS);
                 for (var i=0; i<tiles.length; ++i) {
-                    if (Math.floor(i/4) == Math.floor(hole/4) && i > hole) {
+                    if (Math.floor(i/COLS) == Math.floor(hole/COLS) && i > hole) {
                         if (source == i || sink == i) break;
-                        map.putTile(tiles[i].index, hole % 4, Math.floor(hole/4));
-                        map.removeTile(i%4, Math.floor(i/4));
+                        map.putTile(tiles[i].index, hole % COLS, Math.floor(hole/COLS));
+                        map.removeTile(i%COLS, Math.floor(i/COLS));
                         hole = i;
+                        game.time.removeAll();
                         fillTiles();
                         break;
                     }
                 }
             }
-            if (cursors.right.downDuration(100) && hole % 4 != 0) {
-                tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            if (cursors.right.downDuration(100) && hole % COLS != 0) {
+                tiles = layer1.getTiles(0, 0, TILE_SIZE * COLS, TILE_SIZE * ROWS);
                 for (var i=tiles.length-1; i>=0; --i) {
-                    if (Math.floor(i/4) == Math.floor(hole/4) && i < hole) {
+                    if (Math.floor(i/COLS) == Math.floor(hole/COLS) && i < hole) {
                         if (source == i || sink == i) break;
-                        map.putTile(tiles[i].index, hole % 4, Math.floor(hole/4));
-                        map.removeTile(i%4, Math.floor(i/4));
+                        map.putTile(tiles[i].index, hole % COLS, Math.floor(hole/COLS));
+                        map.removeTile(i%COLS, Math.floor(i/COLS));
                         hole = i;
+                        game.time.removeAll();
                         fillTiles();
                         break;
                     }
                 }
             }
-            if (cursors.up.downDuration(100) && Math.floor(hole/4) != 3) {
-                tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            if (cursors.up.downDuration(100) && Math.floor(hole/COLS) != ROWS - 1) {
+                tiles = layer1.getTiles(0, 0, TILE_SIZE * COLS, TILE_SIZE * ROWS);
                 for (var i=0; i<tiles.length; ++i) {
-                    if (i%4 == hole%4 && i > hole) {
+                    if (i%COLS == hole%COLS && i > hole) {
                         if (source == i || sink == i) break;
-                        map.putTile(tiles[i].index, hole % 4, Math.floor(hole/4));
-                        map.removeTile(i%4, Math.floor(i/4));
+                        map.putTile(tiles[i].index, hole % COLS, Math.floor(hole/COLS));
+                        map.removeTile(i%COLS, Math.floor(i/COLS));
                         hole = i;
+                        game.time.removeAll();
                         fillTiles();
                         break;
                     }
                 }
             }
-            if (cursors.down.downDuration(100) && Math.floor(hole/4) != 0) {
-                tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            if (cursors.down.downDuration(100) && Math.floor(hole/COLS) != 0) {
+                tiles = layer1.getTiles(0, 0, TILE_SIZE * COLS, TILE_SIZE * ROWS);
                 for (var i=tiles.length-1; i>=0; --i) {
-                    if (i%4 == hole%4 && i < hole) {
+                    if (i%COLS == hole%COLS && i < hole) {
                         if (source == i || sink == i) break;
-                        map.putTile(tiles[i].index, hole % 4, Math.floor(hole/4));
-                        map.removeTile(i%4, Math.floor(i/4));
+                        map.putTile(tiles[i].index, hole % COLS, Math.floor(hole/COLS));
+                        map.removeTile(i%COLS, Math.floor(i/COLS));
                         hole = i;
+                        game.time.removeAll();
                         fillTiles();
                         break;
                     }
@@ -155,16 +167,16 @@
 
             tiles_to_check = [];
             if (edges[0] == 1) {
-                if (getEdges(tiles[from-6])[2] == 1)
-                    tiles_to_check.push(from - 6);
+                if (getEdges(tiles[from-(COLS+2)])[2] == 1)
+                    tiles_to_check.push(from - (COLS+2));
             }
             if (edges[1] == 1) {
                 if (getEdges(tiles[from+1])[3] == 1)
                     tiles_to_check.push(from + 1);
             }
             if (edges[2] == 1) {
-                if (getEdges(tiles[from+6])[0] == 1)
-                    tiles_to_check.push(from + 6);
+                if (getEdges(tiles[from+(COLS+2)])[0] == 1)
+                    tiles_to_check.push(from + (COLS+2));
             }
             if (edges[3] == 1) {
                 if (getEdges(tiles[from-1])[1] == 1)
@@ -179,11 +191,12 @@
                     if (tile_index % 2 == 0) {
                         // make sure the tile is displaying as filled
                         var orig_tile = tile_to_check;
-                        if (orig_tile >= 13) orig_tile -= 2;
-                        if (orig_tile >= 17) orig_tile -= 2;
-                        if (orig_tile >= 21) orig_tile -= 2;
-                        orig_tile -= 7;
-                        map.putTile( tile_index + 1, orig_tile % 4, Math.floor(orig_tile / 4) );
+                        for (var j=1; j<ROWS; ++j) {
+                            if (orig_tile >= 1 + (j+1)*(COLS + 2) - 2 * (j-1)) orig_tile -= 2;
+                        }
+                        orig_tile = orig_tile - 3 - COLS;
+                        if (orig_tile != hole)
+                            map.putTile( tile_index + 1, orig_tile % COLS, Math.floor(orig_tile / COLS) );
                     }
                     visited.push(tile_to_check);
                     //floodFillTiles(tiles, tile_to_check, new_edges, visited);
@@ -195,29 +208,25 @@
 
         function fillTiles() {
 
-            tiles = layer1.getTiles(0, 0, 32 * 4, 32 * 4);
+            tiles = layer1.getTiles(0, 0, TILE_SIZE * COLS, TILE_SIZE * ROWS);
             for (var i=0; i<tiles.length; ++i) {
                 if (tiles[i].index % 2 == 1 && i != source) {
-                    map.putTile(tiles[i].index - 1, i % 4, Math.floor(i/4));
+                    map.putTile(tiles[i].index - 1, i % COLS, Math.floor(i/COLS));
                 } else if (i == source && tiles[i].index % 2 == 0) {
-                    map.putTile(tiles[i].index + 1, i % 4, Math.floor(i/4));
+                    map.putTile(tiles[i].index + 1, i % COLS, Math.floor(i/COLS));
                 }
             }
             var start_tile_index = tiles[source].index;
             var start_tile;
-            padded_tiles = [
-                -1, -1, -1, -1, -1, -1,
-                -1,  0,  0,  0,  0, -1,
-                -1,  0,  0,  0,  0, -1,
-                -1,  0,  0,  0,  0, -1,
-                -1,  0,  0,  0,  0, -1,
-                -1, -1, -1, -1, -1, -1
-            ];
-            for (var i=0; i<16; ++i) {
-                var padded_index = 7 + i;
-                if (i >= 4) padded_index += 2;
-                if (i >= 8) padded_index += 2;
-                if (i >= 12) padded_index += 2;
+            var padded_tiles = [];
+            for (var i=0; i<(ROWS+2)*(COLS+2); ++i) {
+                padded_tiles.push(-1);
+            }
+            for (var i=0; i<ROWS*COLS; ++i) {
+                var padded_index = COLS + 3 + i;
+                for (var j=1; j<ROWS; ++j) {
+                    if (i >= j * COLS) padded_index += 2;
+                }
                 padded_tiles[padded_index] = tiles[i].index
                 if (i == source) start_tile = padded_index;
             }
@@ -226,16 +235,17 @@
 
         function updateMarker() {
 
-            marker.x = layer1.getTileX(game.input.activePointer.worldX) * 32;
-            marker.y = layer1.getTileY(game.input.activePointer.worldY) * 32;
+            marker.x = layer1.getTileX(game.input.activePointer.worldX) * TILE_SIZE;
+            marker.y = layer1.getTileY(game.input.activePointer.worldY) * TILE_SIZE;
         }
 
         function tileClick() {
 
-            if (marker.x > 32 * 4 || marker.y > 32 * 4) return;
+            if (marker.x > TILE_SIZE * COLS || marker.y > TILE_SIZE * ROWS) return;
             tileX = layer1.getTileX(marker.x);
             tileY = layer1.getTileX(marker.y);
-            tile_index = tiles[tileY * 4 + tileX].index;
+            tiles = layer1.getTiles(0, 0, TILE_SIZE * COLS, TILE_SIZE * ROWS);
+            tile_index = tiles[tileY * COLS + tileX].index;
             if (tile_index != -1) {
                 map.putTile((tile_index + 12) % 48,
                             tileX,
@@ -248,7 +258,7 @@
 
             marker = game.add.graphics();
             marker.lineStyle(2, 0x000000, 1);
-            marker.drawRect(0, 0, 32, 32);
+            marker.drawRect(0, 0, TILE_SIZE, TILE_SIZE);
         }
 
     };
