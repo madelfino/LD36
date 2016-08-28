@@ -2,6 +2,7 @@ window.onload = function() {
 
     var ROWS = 5, COLS = 6;
     var TILE_SIZE = 32; //Just support square tiles for now
+    var text;
 
     var game = new Phaser.Game( 800, 600, Phaser.AUTO, '', { preload: preload, create: create });
 
@@ -132,6 +133,19 @@ window.onload = function() {
         }
     }
 
+    function victory() {
+      for (var i=0; i<ROWS*COLS; ++i) {
+        map.removeTile(i % COLS, Math.floor(i / COLS));
+      }
+      var style = { font: "bold 32px Arial",
+                    fill: "#fff",
+                    boundsAlignH: "center",
+                    boundsAlignV: "middle" };
+      text = game.add.text(0, 0, "Victory!", style);
+      text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
+      text.setTextBounds(0, 0, COLS * TILE_SIZE, ROWS * TILE_SIZE);
+    }
+
     function getEdges(tile_index) {
 
         /*
@@ -192,10 +206,16 @@ window.onload = function() {
                         if (orig_tile >= 1 + (j+1)*(COLS + 2) - 2 * (j-1)) orig_tile -= 2;
                     }
                     orig_tile = orig_tile - 3 - COLS;
-                    if (orig_tile != hole)
+                    if (orig_tile != hole) {
                         map.putTile( tile_index + 1, orig_tile % COLS, Math.floor(orig_tile / COLS) );
-                    if (orig_tile == sink)
-                        console.log('Victory!');
+                    }
+                    if (orig_tile == sink) {
+                      game.input.deleteMoveCallback(updateMarker, this);
+                      game.input.onDown.remove(tileClick, this);
+                      game.input.keyboard.onDownCallback = null;
+                      game.time.events.add(Phaser.Timer.SECOND, victory, this);
+                    }
+
                 }
                 visited.push(tile_to_check);
                 game.time.events.add(Phaser.Timer.SECOND / 10, floodFillTiles, this, tiles, tile_to_check, new_edges, visited);
