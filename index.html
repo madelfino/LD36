@@ -247,6 +247,7 @@
             tiles = layer1.getTiles(0, 0, TILE_SIZE * COLS, TILE_SIZE * ROWS);
             tile_index = tiles[tileY * COLS + tileX].index;
             if (tile_index != -1) {
+                game.time.removeAll();
                 map.putTile((tile_index + 12) % 48,
                             tileX,
                             tileY);
