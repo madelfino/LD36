@@ -148,10 +148,10 @@
                 decimal.
             */
             tileEdges = [
-                12, 12, 13, 13, 10, 10, 15, 15, 15, 15, 2, 2,
-                 6,  6, 14, 14,  5,  5, 15, 15, 15, 15, 1, 1,
-                 3,  3,  7,  7, 10, 10, 15, 15, 15, 15, 8, 8,
-                 9,  9, 11, 11,  5,  5, 15, 15, 15, 15, 4, 4
+                12, 12, 13, 13, 10, 10, 0, 0, 0, 0, 2, 2,
+                 6,  6, 14, 14,  5,  5, 0, 0, 0, 0, 1, 1,
+                 3,  3,  7,  7, 10, 10, 0, 0, 0, 0, 8, 8,
+                 9,  9, 11, 11,  5,  5, 0, 0, 0, 0, 4, 4
             ];
             edges = [ 0, 0, 0, 0];
             whichEdges = tileEdges[tile_index];
@@ -197,9 +197,10 @@
                         orig_tile = orig_tile - 3 - COLS;
                         if (orig_tile != hole)
                             map.putTile( tile_index + 1, orig_tile % COLS, Math.floor(orig_tile / COLS) );
+                        if (orig_tile == sink)
+                            alert('Victory!');
                     }
                     visited.push(tile_to_check);
-                    //floodFillTiles(tiles, tile_to_check, new_edges, visited);
                     game.time.events.add(Phaser.Timer.SECOND / 10, floodFillTiles, this, tiles, tile_to_check, new_edges, visited);
                 }
             }
