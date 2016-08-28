@@ -187,7 +187,7 @@ window.onload = function() {
                     if (orig_tile != hole)
                         map.putTile( tile_index + 1, orig_tile % COLS, Math.floor(orig_tile / COLS) );
                     if (orig_tile == sink)
-                        alert('Victory!');
+                        console.log('Victory!');
                 }
                 visited.push(tile_to_check);
                 game.time.events.add(Phaser.Timer.SECOND / 10, floodFillTiles, this, tiles, tile_to_check, new_edges, visited);
